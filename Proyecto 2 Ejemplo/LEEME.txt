@@ -1,0 +1,193 @@
+﻿=====================================================================
+  PROYECTO 2 EJEMPLO - CONTROL AGRÍCOLA (Agrícola Los 3 Patitos S.A.)
+  II Proyecto Programado - Progra 2
+=====================================================================
+
+Este es un proyecto de EJEMPLO completo, hecho para que veas todo lo que
+pide el enunciado funcionando y te sirva de guía cuando hagas el tuyo.
+
+OJO: el enunciado dice que proyectos parecidos "en estructura completa"
+se califican con 0 por plagio. Úsalo para entender y orientarte, no para
+entregarlo: tu proyecto lo vamos a construir paso a paso.
+
+
+---------------------------------------------------------------------
+ 1. CÓMO EJECUTARLO
+---------------------------------------------------------------------
+ 1. Base de datos: abrir "ScriptDB_ControlAgricola.sql" en SQL Server
+    Management Studio y ejecutarlo completo (F5).
+    (En esta computadora YA está creada la base "ControlAgricola".)
+
+ 2. Abrir "ControlAgricola.sln" en Visual Studio Community.
+
+ 3. Revisar la cadena de conexión en  ControlAgricola\Datos\Conexion.cs
+    - En esta computadora ya funciona (usa el usuario de Windows).
+    - En el laboratorio se cambia por el servidor, usuario y clave de
+      allá; en el mismo archivo está comentado cómo.
+
+ 4. Ejecutar con F5.
+
+ Usuarios de prueba (están en el script):
+    Usuario      Clave       Tipo            Estado
+    admin        admin123    Administrador   Activo
+    digitador    1234        Digitador       Activo
+    inactivo     1234        Digitador       Inactivo (no puede entrar)
+
+
+---------------------------------------------------------------------
+ 2. CÓMO ESTÁ ORGANIZADO (PROGRAMACIÓN EN CAPAS)
+---------------------------------------------------------------------
+ Es la misma estructura del proyecto Restaurante de clase:
+
+ Objetos\        Una clase por cada "cosa" del sistema, solo con propiedades.
+                 Usuario, Cultivo, Lote, Agroquimico,
+                 Aplicacion + DetalleAplicacion,
+                 Paquete + DetallePaquete, Calendario
+
+ Datos\          Todo el SQL. Una clase por tabla, con métodos static:
+                 Guardar, Modificar, Borrar, Consultar, Listar.
+                 Conexion.cs abre y cierra la conexión.
+                 DatosReportes.cs tiene las consultas de los 2 reportes.
+
+ Logica\         Reglas que no son ni pantalla ni SQL:
+                 LogicaCalendario  -> calcula las fechas de las aplicaciones
+                 LogicaUsuarios    -> busca el usuario para el login
+                 Validaciones      -> esEntero, esDecimal
+                 Sesion            -> recuerda quién hizo login
+
+ Presentacion\   Las ventanas (WinForms), estilo web visto en clase:
+                 frmLogin -> frmPrincipal (menú a la izquierda + panel
+                 contenedor donde se abren las demás con abrirFormH).
+
+ Regla de oro: la ventana NUNCA escribe SQL. La ventana arma un objeto y
+ se lo pasa a Datos (o a Logica). Datos nunca muestra MessageBox.
+
+
+---------------------------------------------------------------------
+ 3. BASE DE DATOS (9 tablas)
+---------------------------------------------------------------------
+ Usuarios
+ Cultivos
+ Lotes ................. cada lote tiene UN cultivo (idCultivo)
+ Agroquimicos
+ Aplicaciones .......... encabezado
+   DetalleAplicaciones . qué agroquímicos lleva cada aplicación
+ Paquetes .............. encabezado, pertenece a UN cultivo
+   DetallePaquetes ..... qué aplicación y a los cuántos días de siembra
+ Calendario ............ una fila = una aplicación, un día, en un lote
+
+ Cómo se conecta todo (esto es lo más importante de entender):
+
+   Cultivo --< Lotes                (fecha de siembra, hectáreas)
+   Cultivo --< Paquetes --< DetallePaquetes >-- Aplicaciones
+                                                     |
+                                           DetalleAplicaciones >-- Agroquimicos
+
+   CALENDARIZAR un cultivo =
+      por cada LOTE activo del cultivo
+         por cada línea de los PAQUETES activos del cultivo
+            fecha = fecha de siembra del lote + días después de siembra
+
+   CONSUMO de un agroquímico =
+      dosis por hectárea  x  hectáreas del lote   (por cada aplicación
+      del calendario que cae en el rango de fechas)
+
+ Es exactamente lo que hace el Excel "Proyección de Aplicaciones":
+ fila 10 (Fecha Programada = B5 + días) y las celdas Dosis * Hectareaje.
+ Los datos de ejemplo del script salen de ese Excel (cultivo Piña).
+
+
+---------------------------------------------------------------------
+ 4. RECORRIDO PARA PROBARLO (ORDEN DE LA DEMOSTRACIÓN)
+---------------------------------------------------------------------
+ 1. Login con "inactivo"  -> no deja entrar (restricción por estado).
+ 2. Login con "digitador" -> no aparecen Usuarios ni Lotes en el menú.
+ 3. Login con "admin"     -> aparece todo.
+ 4. Cultivos, Lotes, Agroquímicos: Guardar / Consultar (lupa o clic en
+    la tabla) / Actualizar / Borrar.
+ 5. Aplicaciones: encabezado + Agregar/Quitar agroquímicos + Guardar.
+ 6. Paquetes: encabezado + Agregar/Quitar aplicaciones con sus días.
+ 7. Calendarización: elegir "Piña" -> Calendarizar -> 52 aplicaciones
+    (2 lotes x 26 líneas de paquete).
+ 8. Reportes -> Aplicaciones x Día: año 2025 (33) y 2026 (19).
+ 9. Reportes -> Agroquímicos: del 01/08/2025 al 31/12/2026.
+10. Reportes -> Ver Calendario: ir a septiembre 2025 y tocar un día en
+    negrita.
+11. Poner un cultivo Inactivo y ver que ya no sale en los ComboBox de
+    Lotes, Paquetes ni Calendarización.
+
+
+---------------------------------------------------------------------
+ 5. RÚBRICA: DÓNDE SE CUMPLE CADA PUNTO
+---------------------------------------------------------------------
+ Registro de Usuarios (4) ............ frmUsuarios + DatosUsuarios
+ Registro de Cultivos (4) ............ frmCultivos + DatosCultivos
+ Registro de Lotes (4) ............... frmLotes + DatosLotes
+ Registro de Agroquímicos (4) ........ frmAgroquimicos + DatosAgroquimicos
+ Registro de Aplicaciones (4) ........ frmAplicaciones + DatosAplicaciones
+ Paquetes, tipo facturación (8) ...... frmPaquetes + DatosPaquetes
+                                       (encabezado + detalle = operaciones dobles)
+ Login (3) ........................... frmLogin + LogicaUsuarios + Sesion
+ Restricciones x Estado (3) .......... login (usuario inactivo) y métodos
+                                       ListarActivos... que llenan los ComboBox
+                                       y alimentan la calendarización
+ Calendarización (5) ................. frmCalendario + LogicaCalendario
+ Reporte Aplicaciones x Día (10) ..... frmReporteAplicaciones + DatosReportes
+ Reporte Agroquímicos (8) ............ frmReporteAgroquimicos + DatosReportes
+ Aplicaciones en Calendario (5 extra)  frmVerCalendario
+ Documentación interna (5) ........... comentarios en todas las clases
+ Uso de Objetos (6) .................. carpeta Objetos; las ventanas pasan
+                                       objetos a Datos y Datos devuelve objetos
+ Base de datos normalizada (14) ...... las 7 tablas base + 2 de detalle, con
+                                       llaves primarias y foráneas
+ Capas (3) ........................... Objetos / Datos / Logica / Presentacion
+ Informe técnico (5) ................. NO ESTÁ HECHO. Debe salir de tu propia
+                                       experiencia (problemas y lecciones).
+
+
+---------------------------------------------------------------------
+ 6. COSAS QUE USA EL EJEMPLO Y QUE NO ESTÁN EN "RESTAURANTE"
+---------------------------------------------------------------------
+ El enunciado castiga usar cosas no vistas en clase, salvo las que el
+ proyecto necesite por naturaleza. Antes de usar cualquiera de estas en
+ TU proyecto, revisa si ya la vieron o pregúntale al profesor:
+
+ En SQL (dentro de la capa de Datos):
+   - Inner Join ............ mostrar el nombre del cultivo en vez del id
+   - Case ... When ... End . mostrar "Activo/Inactivo" en vez de 1/0
+   - Sum + Group By ........ reporte de agroquímicos consumibles
+   - Convert / Cast / Year / DateDiff / Count(*) en subconsulta
+   - Identity .............. id automático de la tabla Calendario
+   - On Delete Cascade ..... al borrar un encabezado se borra su detalle
+
+ En C#:
+   - foreach (DataRow fila in tabla.Rows) y Convert.ToInt32(fila["id"])
+     para pasar de la tabla a objetos (en clase solo se llenó el grid)
+   - ComboBox llenado desde la base de datos:
+     DataSource, DisplayMember, ValueMember, SelectedValue
+   - DateTimePicker (fecha de siembra y rango del reporte)
+   - MonthCalendar (solo en la ventana de puntos extra)
+   - Evento CellClick del grid y grid.CurrentRow
+   - MessageBox con Sí/No (DialogResult) para confirmar antes de borrar
+   - fecha.AddDays(dias) y fecha.ToString("yyyyMMdd")
+   - Clase Sesion con una variable static
+   - "Integrated Security=true" en la cadena de conexión
+
+ Decisiones que se pueden hacer distinto (y son buenos temas para pensar):
+   - Los reportes se resolvieron con SQL. También se podrían hacer en C#
+     con listas y foreach, como en tu Proyecto 1.
+   - El tipo de agroquímico y la unidad son números (0, 1, 2...) con un
+     ComboBox fijo. Otra opción es una tabla aparte de tipos.
+   - Usuarios y Lotes se OCULTAN al digitador. Otra opción es deshabilitarlos.
+
+
+---------------------------------------------------------------------
+ 7. LIMITACIONES CONOCIDAS (IGUAL QUE EN CLASE)
+---------------------------------------------------------------------
+   - El SQL se arma concatenando texto, como en DatosClientes. Si un nombre
+     lleva un apóstrofo (') la instrucción falla y sale "Error al guardar".
+     La forma profesional es usar parámetros (SqlParameter): no se usó
+     porque no se ha visto en clase.
+   - La clave se guarda tal cual, sin encriptar.
+   - Guardar un encabezado con su detalle son varias instrucciones seguidas
+     sin transacción.
