@@ -1,0 +1,74 @@
+CONTROL AGRÍCOLA - Agrícola Los 3 Patitos S.A.
+Proyecto II - Programación II (ITI-321)
+C# WinForms .NET Framework 4.7.2 + SQL Server, programación en capas
+
+==================================================================
+1. INSTALACIÓN
+==================================================================
+1) Abrir BaseDatos\ControlAgricola.sql en SQL Server Management Studio
+   y ejecutarlo completo (F5). Crea la base "AgricolaLos3Patitos"
+   con sus tablas y los datos de ejemplo del Excel.
+   Si la base ya existe hay que borrarla primero (el script no la borra).
+
+2) Abrir ControlAgricola.sln en Visual Studio.
+
+3) Revisar la cadena de conexión en Datos\Conexion.cs:
+      Data Source=PCRIOSKY   -> nombre del servidor SQL de la computadora
+   Si se usa el usuario "sa" cambiar Integrated Security=true por
+      User Id=sa; Password=su_clave;
+
+4) Ejecutar (F5).
+
+Usuarios de prueba:
+   admin     / admin123   -> Administrador (todo el sistema)
+   digitador / dig123     -> Digitador (sin Usuarios ni Lotes)
+   inactivo  / ina123     -> Usuario INACTIVO (no puede ingresar)
+
+==================================================================
+2. ESTRUCTURA (CAPAS)
+==================================================================
+Objetos\      Clases con propiedades (Usuario, Cultivo, Lote, Agroquimico,
+              Aplicacion, AplicacionDetalle, Paquete, PaqueteDetalle,
+              Calendario)
+Datos\        Conexion y una clase por tabla con las consultas SQL
+              (SiguienteId, Guardar, Modificar, Borrar, Consultar, Listar).
+              DatosUsuarios.usuarioActual guarda quién inició sesión.
+Logica\       Calendarizacion: calcula el calendario de un cultivo
+Presentacion\ Ventanas: Login, Principal (menú con submenús y panel),
+              mantenimientos, calendarización y reportes
+
+==================================================================
+3. CÓMO SE CUMPLE LA RÚBRICA
+==================================================================
+Mantenimientos (Usuarios, Cultivos, Lotes, Agroquímicos, Aplicaciones,
+Paquetes): Agregar (crear), Buscar (consultar), Modificar, Eliminar
+(borrar) y Limpiar. La tabla muestra valores legibles (nombres en vez
+de id, "Activo/Inactivo").
+
+Aplicaciones y Paquetes = "operaciones dobles": datos generales +
+detalle. El detalle se arma en una lista temporal (Agregar / Quitar)
+y se guarda todo junto.
+
+Login: valida usuario, clave y estado. El Digitador no ve los botones
+de Usuarios ni de Lotes.
+
+Restricciones por estado: un usuario inactivo no ingresa; los combos
+solo muestran cultivos, agroquímicos y aplicaciones ACTIVOS; la
+calendarización solo usa lotes y paquetes ACTIVOS.
+
+Calendarización: se selecciona un cultivo y se calcula
+   fecha = fecha de siembra del lote + días después de siembra
+para cada aplicación de cada paquete del cultivo en cada lote.
+
+Reportes:
+   - Calendario por día (se escoge el año): Fecha, Lote, Cultivo,
+     Aplicación. Los días con aplicaciones salen en negrita en un
+     MonthCalendar (puntos adicionales); al hacer clic en un día se
+     muestran solo las aplicaciones de ese día.
+   - Listado de agroquímicos en un rango de fechas: Cultivo,
+     Agroquímico, Cantidad (dosis x hectárea x hectareaje del lote).
+
+Base de datos normalizada: 12 tablas con llaves primarias, foráneas
+y campos únicos.
+
+Pendiente del grupo: el Informe técnico (resumen ejecutivo).
