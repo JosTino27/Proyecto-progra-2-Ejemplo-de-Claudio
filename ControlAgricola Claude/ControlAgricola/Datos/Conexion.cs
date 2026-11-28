@@ -25,7 +25,7 @@ namespace ControlAgricola.Datos
              * Trust Server Certificate
              */
 
-            string conectar = "Data Source=PCRIOSKY; Initial Catalog=AgricolaLos3Patitos; Integrated Security=true; TrustServerCertificate=true;";
+            string conectar = "Data Source=JOSTT; Initial Catalog=AgricolaLos3Patitos; User Id=sa; Password=12345; TrustServerCertificate=true;";
             con = new SqlConnection(conectar);
         }
 
